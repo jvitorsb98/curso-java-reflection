@@ -1,7 +1,9 @@
 package br.com.alura;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 public class Transformator {
 
@@ -9,10 +11,26 @@ public class Transformator {
         Class<?> source = input.getClass();
         Class<?> target = Class.forName(source + "DTO");
         O targetClass = (O) target.getDeclaredConstructor().newInstance();
-        Field[] sourceField = source.getDeclaredFields();
-        Field[] targetField = target.getDeclaredFields();
+        Field[] sourceFields = source.getDeclaredFields();
+        Field[] targetFields = target.getDeclaredFields();
+
+        Arrays.stream(sourceFields).forEach(sourceField -> Arrays.stream(targetFields).forEach(targetField -> {
+            validate(sourceField,targetField);
+            try {
+                targetField.set(targetClass,sourceField.get(input));
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }));
 
         return targetClass;
+    }
+
+    private void validate(Field sourceField , Field targetField){
+        if(sourceField.getName().equals(targetField.getName()) && sourceField.getType().equals(targetField.getType())){
+            sourceField.setAccessible(true);
+            targetField.setAccessible(true);
+        }
     }
 
 }
